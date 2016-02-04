@@ -1,0 +1,32 @@
+runners:
+  emr:
+    aws_region: 'us-east-1'
+    aws_access_key_id: <Your AWS_ACCESS_KEY_ID>
+    aws_secret_access_key: <Your AWS_SECRET_ACCESS_KEY>
+    cmdenv:
+        AWS_ACCESS_KEY_ID: <Your AWS_ACCESS_KEY_ID>
+        AWS_SECRET_ACCESS_KEY: <Your AWS_SECRET_ACCESS_KEY>
+    ec2_key_pair: <Path to your PEM file>
+    ec2_key_pair_file: <Name of the Key>
+    ssh_tunnel_to_job_tracker: true
+    ec2_instance_type: 'm1.xlarge'
+    ec2_master_instance_type: 'm1.xlarge'
+    emr_tags:
+        project: <Your Project>
+        name: <Project Name>
+    num_ec2_instances: 12
+    ami_version: '2.4.10'
+    python_bin: python2.7
+    interpreter: python2.7
+    bootstrap_action:
+        - s3://elasticmapreduce/bootstrap-actions/install-ganglia
+    upload_files:
+        - CommonCrawl.py
+    bootstrap:
+        - tar xfz Python-2.7.11.tgz#
+        - cd Python-2.7.11
+        - ./configure && make && sudo make install
+        - sudo python2.7 get-pip.py#
+        - sudo pip2 install --upgrade pip setuptools wheel
+        - sudo pip2 install -r requirements.txt#
+

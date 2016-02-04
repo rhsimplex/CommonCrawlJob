@@ -1,0 +1,7 @@
+mrjob
+warc
+simplejson
+boto3
+sphinx_bootstrap_theme
+sqlalchemy
+psycopg2
