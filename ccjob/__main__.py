@@ -2,7 +2,7 @@ from __future__ import print_function
 
 from .__version__ import __version__, __build__
 from . aws import select_crawl, get_index, print_buckets
-from . redshift import upload2redshift
+from . redshift import gen_redshift_query
 
 import sys
 
@@ -29,14 +29,13 @@ def command_line():
     redshift_parser = ArgumentParser(add_help=False)
     redshift_parser.add_argument(
         '--redshift',
-        action='append',
-        help="Provide column names to upload to redshift",
-        metavar='col',
+        nargs=1,
+        metavar='redshift'
     )
 
     cols, _ = redshift_parser.parse_known_args()
     if cols.redshift:
-        upload2redshift(cols.redshift)
+        print(gen_redshift_query(cols.redshift[0]))
         exit(0)
 
     parser = ArgumentParser(

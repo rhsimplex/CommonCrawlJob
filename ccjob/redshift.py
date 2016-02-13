@@ -1,39 +1,59 @@
-import psycopg2
 import sys
 import os
+from getpass import getpass
 
-def upload2redshift(column_name_type, port=5439):
+def parse_odbc(url):
+    """
+    Parse Redshift ODBC URL
+    -----------------------
+
+    :param url: Fully Qualified ODBC URL
+    :type  url: str
+    :return parsed: ODBC fields parsed into respective fields.
+    :rtype  parsed: dict
+
+    .. example::
+
+        Driver={Amazon Redshift (x64)};
+        Server=server_name.xxxxxx.us-east-1.redshift.amazonaws.com;
+        Database=mydb;
+        UID=myuser;
+    """
+    secrets = 'Database', 'Port', 'Server', 'UID'
+    parsed = dict([
+        dr.strip().split('=') for dr in url.strip().split(';')
+        if any(secret in dr for secret in secrets)
+    ])
+    # Ensure all fields were serialized
+    assert set(parsed) == set(secrets)
+
+    return parsed
+
+def gen_redshift_query(odbc_url):
 
     # `raw_input` is input in Python 3
     if sys.version_info.major == 2:
         input = raw_input
 
-    endpoint = input("Redshift Endpoint: ")
-    user = input("Redshift Username: ")
-    pw = input("Redshift Password: ")
-    dbname = input("Redshift Database Name: ")
-    table_name = input("Redshift Table Name: ")
-
-    aws_key = os.getenv("AWS_ACCESS_KEY") or input("AWS_ACCESS_KEY: ")
-    aws_secret = os.getenv("AWS_SECRET_ACCESS_KEY") or input("AWS_SECRET_ACCESS_KEY")
+    aws_access_key_id = os.getenv("AWS_ACCESS_KEY_ID") or input("AWS_ACCESS_KEY: ")
+    aws_secret_access_key = os.getenv("AWS_SECRET_ACCESS_KEY") or input("AWS_SECRET_ACCESS_KEY")
 
     s3_bucket = input("S3 Output Bucket: ")
+    output_table = input("Output Redshift Table: ")
 
-    conn = psycopg2.connect(
-        host=endpoint,
-        user=user,
-        port=port,
-        password=pw,
-        dbname=dbname
+    upload = """
+        COPY           \'cc.{output_table}\'
+        FROM           \'{s3_bucket}\'
+        CREDENTIALS    \'aws_access_key_id={aws_access_key_id};aws_secret_access_key={aws_secret_access_key};\'
+        DELIMITER      \'\\t\'
+        REGION         \'us-east-1\'
+        ACCEPTINVCHARS  AS \'^\'
+        NULL            AS \'\\000\'
+        TRUNCATECOLUMNS REMOVEQUOTES;
+        """.format(
+        aws_access_key_id=aws_access_key_id,
+        aws_secret_access_key=aws_secret_access_key,
+        s3_bucket=s3_bucket,
+        output_table=output_table,
     )
-
-    cur = conn.cursor()
-    columns = ",".join(column_name_type)
-    upload = "CREATE TABLE %s (%s); COPY %s FROM \'%s\' CREDENTIALS \'aws_access_key_id=%s;aws_secret_access_key=%s\'" % (table_name, columns, table_name, s3_bucket, aws_key, aws_secret)
-    upload = upload + " DELIMITER '\t' region 'us-east-1' TRUNCATECOLUMNS REMOVEQUOTES;"
-    cur.execute(upload)
-    cur2 = conn.cursor()
-    cur2.execute("select query, trim(filename) as file, curtime as updated from stl_load_commits where query = pg_last_copy_id();")
-    print("Result of upload:", cur2.fetchall())
-    cur2.execute("SELECT * FROM %s LIMIT 10;" % (table_name))
-    print("First 10 rows:", cur2.fetchall())
+    return upload
