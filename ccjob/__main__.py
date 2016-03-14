@@ -26,20 +26,8 @@ def command_line():
         print_buckets()
         exit(0)
 
-    redshift_parser = ArgumentParser(add_help=False)
-    redshift_parser.add_argument(
-        '--redshift',
-        nargs=1,
-        metavar='redshift'
-    )
-
-    cols, _ = redshift_parser.parse_known_args()
-    if cols.redshift:
-        print(gen_redshift_query(cols.redshift[0]))
-        exit(0)
-
     parser = ArgumentParser(
-        parents=[crawl_list, redshift_parser],
+        parents=[crawl_list],
         prog='ccjob',
         description=description,
     )

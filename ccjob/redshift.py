@@ -29,7 +29,7 @@ def parse_odbc(url):
 
     return parsed
 
-def gen_redshift_query(odbc_url):
+def gen_redshift_query():
 
     # `raw_input` is input in Python 3
     if sys.version_info.major == 2:
@@ -51,9 +51,9 @@ def gen_redshift_query(odbc_url):
         NULL            AS \'\\000\'
         TRUNCATECOLUMNS REMOVEQUOTES;
         """.format(
-        aws_access_key_id=aws_access_key_id,
-        aws_secret_access_key=aws_secret_access_key,
-        s3_bucket=s3_bucket,
-        output_table=output_table,
+            aws_access_key_id=aws_access_key_id,
+            aws_secret_access_key=aws_secret_access_key,
+            s3_bucket=s3_bucket,
+            output_table=output_table,
     )
     return upload
