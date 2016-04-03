@@ -22,14 +22,10 @@ class CommonCrawl(MRJob):
         warcfile = WARCFile(fileobj=GzipStreamFile(Key(self.dataset, line)))
 
         for record in warcfile:
-            if record['Content-Type'] == 'application/http; msgtype=response':
-                payload = record.payload.read()
-                headers, body = payload.split('\r\n\r\n', 1)
-                if 'Content-Type: text/html' in headers:
-                    for value in self.process_record(body):
-                        yield ((url2pathname(record.url), value), 1)
+            for value in self.process_record(record):
+                yield value, 1
 
-                    self.increment_counter('commoncrawl', 'processed_records', 1)
+            self.increment_counter('commoncrawl', 'processed_records', 1)
 
-    def reducer(self, url, values):
-        yield (url[0], url[1])
+    def reducer(self, key, value):
+        yield key, sum(value)
